@@ -9,9 +9,7 @@
 
 namespace py = pybind11;
 
-#define M_PI           3.14159265358979323846  /* pi */
-
-namespace mr {
+namespace kincpp {
 
 /* Function: Find if the value is negligible enough to consider 0
  * Inputs: value to be checked as a double
@@ -248,7 +246,7 @@ namespace mr {
 
     Eigen::MatrixXd MatrixLog6(const Eigen::MatrixXd &T) {
         Eigen::MatrixXd m_ret(4, 4);
-        auto rp = mr::TransToRp(T);
+        auto rp = kincpp::TransToRp(T);
         Eigen::Matrix3d omgmat = MatrixLog3(rp.at(0));
         Eigen::Matrix3d zeros3d = Eigen::Matrix3d::Zero(3, 3);
         if (NearZero(omgmat.norm())) {
@@ -322,7 +320,7 @@ namespace mr {
     }
 
     Eigen::MatrixXd TransInv(const Eigen::MatrixXd &transform) {
-        auto rp = mr::TransToRp(transform);
+        auto rp = kincpp::TransToRp(transform);
         auto Rt = rp.at(0).transpose();
         auto t = -(Rt * rp.at(1));
         Eigen::MatrixXd inv(4, 4);
@@ -396,10 +394,12 @@ namespace mr {
         return std::abs(DistanceToSE3(T)) < 1e-3;
     }
 
-    Eigen::VectorXd IKinSpace(const Eigen::MatrixXd &Slist, const Eigen::MatrixXd &M,
-                              const Eigen::MatrixXd &T,
-                              Eigen::VectorXd thetalist,
-                              double eomg, double ev) {
+    std::pair<bool, Eigen::VectorXd> IKinSpace(const Eigen::MatrixXd &Slist,
+                                               const Eigen::MatrixXd &M,
+                                               const Eigen::MatrixXd &T,
+                                               Eigen::VectorXd thetalist,
+                                               double position_tolerance,
+                                               double orientation_tolerance) {
         int i = 0;
         int maxiterations = 20;
         Eigen::MatrixXd Tfk = FKinSpace(M, Slist, thetalist);
@@ -408,7 +408,7 @@ namespace mr {
         Eigen::Vector3d angular(Vs(0), Vs(1), Vs(2));
         Eigen::Vector3d linear(Vs(3), Vs(4), Vs(5));
 
-        bool err = (angular.norm() > eomg || linear.norm() > ev);
+        bool err = (angular.norm() > orientation_tolerance || linear.norm() > position_tolerance);
         Eigen::MatrixXd Js;
 
         while (err && i < maxiterations) {
@@ -421,15 +421,10 @@ namespace mr {
             Vs = Adjoint(Tfk) * se3ToVec(MatrixLog6(Tdiff));
             angular = Eigen::Vector3d(Vs(0), Vs(1), Vs(2));
             linear = Eigen::Vector3d(Vs(3), Vs(4), Vs(5));
-            err = (angular.norm() > eomg || linear.norm() > ev);
+            err = (angular.norm() > orientation_tolerance || linear.norm() > position_tolerance);
         }
 
-        // We'll use this method to return whether IK succeeded.
-        // Pybind does pass-by-value, so we can't change numpy input in-place.
-        if (err)
-            thetalist(0) = -99;
-
-        return thetalist;
+        return std::make_pair(!err, thetalist);
     }
 }
 
@@ -437,7 +432,7 @@ namespace mr {
 // Pybind11 binding function
 PYBIND11_MODULE(kincpp, m
 ) {
-m.def("forward", &mr::FKinSpace, "Forward Kinematics");
-m.def("inverse", &mr::IKinSpace, "Inverse Kinematics");
+m.def("forward", &kincpp::FKinSpace, "Forward Kinematics");
+m.def("inverse", &kincpp::IKinSpace, "Inverse Kinematics");
 }
 

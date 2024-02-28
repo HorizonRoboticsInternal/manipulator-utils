@@ -3,6 +3,7 @@
     wrapper functions for the WX250s manipulator.
 """
 import numpy as np
+from typing import List
 from dataclasses import dataclass, field
 import kinematics_cpp.kincpp as kincpp
 
@@ -32,60 +33,60 @@ class WX250sParams:
                                                  2.1467549800872803, 3.141582727432251])
 
     # Since a list is mutable, make sure to use an instance of the dataclass to retrieve this
-    joint_names: list[str] = field(default_factory=lambda: ['waist', 'shoulder', 'elbow',
+    joint_names: List[str] = field(default_factory=lambda: ['waist', 'shoulder', 'elbow',
                                                             'forearm_roll', 'wrist_angle',
                                                             'wrist_rotate'])
 
     REV: float = 2 * np.pi
 
 
-def wrap_thetas(theta_list: np.ndarray) -> np.ndarray:
+def wrap_joint_positions(joint_positions: np.ndarray) -> np.ndarray:
     """
     Wrap an array of joint commands to [-pi, pi) and between the joint limits.
 
-    :param theta_list: array of floats to wrap
-    :return: array of floats wrapped between [-pi, pi)
+    :param joint_positions: joint positions to wrap
+    :return: array of joint positions wrapped between [-pi, pi)
     """
-    theta_list = (theta_list + np.pi) % WX250sParams.REV - np.pi
+    joint_positions = (joint_positions + np.pi) % WX250sParams.REV - np.pi
 
-    under_limit = theta_list < WX250sParams.lower_joint_limits
-    over_limit = theta_list > WX250sParams.upper_joint_limits
+    under_limit = joint_positions < WX250sParams.lower_joint_limits
+    over_limit = joint_positions > WX250sParams.upper_joint_limits
 
-    theta_list[under_limit] += WX250sParams.REV
-    theta_list[over_limit] -= WX250sParams.REV
+    joint_positions[under_limit] += WX250sParams.REV
+    joint_positions[over_limit] -= WX250sParams.REV
 
-    return theta_list
+    return joint_positions
 
 
-def fwd_kin(curr_thetas: np.ndarray) -> np.ndarray:
+def fwd_kin(joint_positions: np.ndarray) -> np.ndarray:
     """
     Forward kinematics wrapper function for WX250s
 
-    :param curr_thetas: The current joint angles.
+    :param joint_positions: The current joint angles.
     :return: The current end effector TF.
     """
-    return kincpp.forward(WX250sParams.M, WX250sParams.S, curr_thetas)
+    return kincpp.forward(WX250sParams.M, WX250sParams.S, joint_positions)
 
 
-def inv_kin(curr_ee_tf: np.ndarray, theta_guess: np.ndarray,
-            eomg: float = 1e-3, ev: float = 1e-3) -> (bool, np.ndarray):
+def inv_kin(desired_ee_tf: np.ndarray, joint_position_guess: np.ndarray,
+            position_tolerance: float = 1e-3,
+            orientation_tolerance: float = 1e-3
+            ) -> (bool, np.ndarray):
     """
     Inverse kinematics wrapper function for WX250s
 
-    :param curr_ee_tf: The current end effector TF.
-    :param theta_guess: The joint angle initial guess for the IK solver.
-    :param eomg: The end effector orientation tolerance.
-    :param ev: The end effector Cartesian position tolerance.
+    :param desired_ee_tf: The desired end effector TF.
+    :param joint_position_guess: The joint position initial guess for the IK solver.
+    :param position_tolerance: The end effector Cartesian position tolerance.
+    :param orientation_tolerance: The end effector orientation tolerance.
     :return: A tuple containing whether IK succeeded as well as the joint angles.
-             Note if IK failed, the joint angle results should not be used.
+             Note if IK failed, the joint angle results are undefined.
     """
 
-    theta = kincpp.inverse(WX250sParams.S, WX250sParams.M,
-                           curr_ee_tf, theta_guess, eomg, ev)
+    success, joint_positions = kincpp.inverse(WX250sParams.S, WX250sParams.M,
+                                              desired_ee_tf, joint_position_guess,
+                                              position_tolerance, orientation_tolerance)
 
-    # Our way of propagating the success bool from C++
-    success = False if theta[0] == -99 else True
+    joint_positions = wrap_joint_positions(joint_positions)
 
-    theta = wrap_thetas(theta)
-
-    return success, theta
+    return success, joint_positions

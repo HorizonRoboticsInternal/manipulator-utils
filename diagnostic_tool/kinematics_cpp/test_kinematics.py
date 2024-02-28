@@ -21,14 +21,14 @@ def fk_test():
                       [0, 1, 0],
                       [0, 0, -0.1]])
 
-    theta_list = np.array([np.pi / 2.0, 3, np.pi])
+    joint_positions = np.array([np.pi / 2.0, 3, np.pi])
 
     expected_res = np.array([[0, 1, 0, -5],
                              [1, 0, 0, 4],
                              [0, 0, -1, 1.68584073],
                              [0, 0, 0, 1]])
 
-    fk_res = kincpp.forward(M, slist, theta_list)
+    fk_res = kincpp.forward(M, slist, joint_positions)
 
     np.testing.assert_allclose(fk_res, expected_res, atol=1e-4)
 
@@ -51,15 +51,14 @@ def ik_test():
                   [0, 0, -1, 1.6858],
                   [0, 0, 0, 1]])
 
-    curr_theta = np.array([1.5, 2.5, 3])
+    joint_position_guess = np.array([1.5, 2.5, 3])
 
-    eomg = 0.01
-    ev = 0.001
+    position_tolerance = 1e-3
+    orientation_tolerance = 1e-3
 
     expected_res = np.array([1.57073783, 2.99966384, 3.1415342], dtype=np.float64)
 
-    ik_res = kincpp.inverse(slist, M, T, curr_theta, eomg, ev)
-    success = ik_res[0] != -99
+    success, ik_res = kincpp.inverse(slist, M, T, joint_position_guess, position_tolerance, orientation_tolerance)
 
     assert success == True
     assert np.allclose(ik_res, expected_res, atol=1e-4)
