@@ -2,9 +2,12 @@
 
 
 This repo contains several modules for the WX250s arm such as
+- Interbotix ROS2 packages
 - Kinematics module
 - Trajectory generators
 - Sim2Real diagnostic tool
+
+All ROS2-related packages are incorporated as submodules. Therefore, be sure to clone the repo with the `--recurse-submodules` flag.
 
 ### Dependencies
 
@@ -36,18 +39,23 @@ python test_kinematics.py  # tests FK and IK functions
 #### Trajectory Generation and Sim / Hardware Recording
 Afterward, you can take a look at how some simple Cartesian trajectories can be created in `generate_joint_trajectories.py`.
 Recording joint angles when carrying out trajectories can be done in both MuJoCo and hardware in `record_sim.py` and `record_hardware.py`, respectively.
-A simple plotter for the hard-coded triangle trajectory can be seen in `sim2real_diff_plotter.py`.
+Results can be observed for the hard-coded triangle trajectory in `sim2real_diff_plotter.ipynb`.
 
 #### ROS2 Dependency for Hardware Recording
 
-If you wish to use `record_hardware.py`, currently, the code relies on ROS2 packages provided by Interbotix. A major TODO is to remove this dependency.
-For now though, if you would like to use the code in the current state, you will have to download ROS2 using the instructions [here](https://docs.trossenrobotics.com/interbotix_xsarms_docs/ros_interface/ros2/software_setup.html). Those instructions will download a ROS2 package `interbotix_ws`, but you can disregard that as we provide one (***with some modified source code***) in this repo.
+If you wish to use `record_hardware.py`, currently, the code requires ROS2 `humble`.
+You can download ROS2 quickly using the instructions [here](https://docs.trossenrobotics.com/interbotix_xsarms_docs/ros_interface/ros2/software_setup.html). Those instructions will also download all Interbotix ROS2 packages into `interbotix_ws`, but you can disregard that as we provide the packages (***some with modified source code***) as submodules.
 
-To then run `record_hardware.py`, first run the following in a separate terminal and then `python record_hardware.py`.
+To then run `record_hardware.py`, first run the following in a separate terminal 
 ```bash
 cd interbotix_ws   # from home directory
 colcon build       # only need to build once
 ros2 launch interbotix_xsarm_control xsarm_control.launch.py robot_model:=wx250s
+```
+and then `python record_hardware.py`.
+You can also try this code with a simulated version of the arm by instead running
+```bash
+ros2 launch interbotix_xsarm_control xsarm_control.launch.py robot_model:=wx250s use_sim:=true
 ```
 
 ### Troubleshooting
