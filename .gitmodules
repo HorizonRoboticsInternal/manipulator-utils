@@ -1,0 +1,16 @@
+[submodule "interbotix_ros2/interbotix_ros_core"]
+	path = interbotix_ros2/interbotix_ros_core
+	url = https://github.com/Interbotix/interbotix_ros_core.git
+	branch = humble
+[submodule "interbotix_ros2/interbotix_ros_manipulators"]
+	path = interbotix_ros2/interbotix_ros_manipulators
+	url = https://github.com/Interbotix/interbotix_ros_manipulators.git
+	branch = humble
+[submodule "interbotix_ros2/moveit_visual_tools"]
+	path = interbotix_ros2/moveit_visual_tools
+	url = https://github.com/ros-planning/moveit_visual_tools.git
+	branch = ros2
+[submodule "interbotix_ros2/interbotix_ros_toolboxes"]
+	path = interbotix_ros2/interbotix_ros_toolboxes
+	url = https://github.com/QuantuMope/interbotix_ros_toolboxes
+	branch = humble
