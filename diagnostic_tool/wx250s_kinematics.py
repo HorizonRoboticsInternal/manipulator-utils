@@ -2,10 +2,10 @@
     This file contains forward and inverse kinematics
     wrapper functions for the WX250s manipulator.
 """
+import kincpp
 import numpy as np
 from typing import List
 from dataclasses import dataclass, field
-import kinematics_cpp.kincpp as kincpp
 
 
 # Parameters for the WX250s arm.
@@ -68,9 +68,11 @@ def fwd_kin(joint_positions: np.ndarray) -> np.ndarray:
     return kincpp.forward(WX250sParams.M, WX250sParams.S, joint_positions)
 
 
-def inv_kin(desired_ee_tf: np.ndarray, joint_position_guess: np.ndarray,
+def inv_kin(desired_ee_tf: np.ndarray,
+            joint_position_guess: np.ndarray,
             position_tolerance: float = 1e-3,
-            orientation_tolerance: float = 1e-3
+            orientation_tolerance: float = 1e-3,
+            max_iterations: int = 20
             ) -> (bool, np.ndarray):
     """
     Inverse kinematics wrapper function for WX250s
@@ -79,13 +81,17 @@ def inv_kin(desired_ee_tf: np.ndarray, joint_position_guess: np.ndarray,
     :param joint_position_guess: The joint position initial guess for the IK solver.
     :param position_tolerance: The end effector Cartesian position tolerance.
     :param orientation_tolerance: The end effector orientation tolerance.
+    :param max_iterations: The number of iterations before IK solver quits.
     :return: A tuple containing whether IK succeeded as well as the joint angles.
              Note if IK failed, the joint angle results are undefined.
     """
 
-    success, joint_positions = kincpp.inverse(WX250sParams.S, WX250sParams.M,
-                                              desired_ee_tf, joint_position_guess,
-                                              position_tolerance, orientation_tolerance)
+    success, joint_positions = kincpp.inverse(WX250sParams.M, WX250sParams.S,
+                                              desired_ee_tf,
+                                              joint_position_guess,
+                                              position_tolerance,
+                                              orientation_tolerance,
+                                              max_iterations)
 
     joint_positions = wrap_joint_positions(joint_positions)
 
