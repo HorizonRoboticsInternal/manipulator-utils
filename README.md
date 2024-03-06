@@ -3,7 +3,6 @@
 
 This repo contains several modules for the WX250s arm such as
 - Interbotix ROS2 packages
-- Kinematics module
 - Trajectory generators
 - Sim2Real diagnostic tool
 
@@ -11,35 +10,22 @@ All ROS2-related packages are incorporated as submodules. Therefore, be sure to 
 
 ### Dependencies
 
-The kinematics module is coded in C++ and has Python bindings through pybind. 
+The diagnostic tool depends on `kincpp`, a pybind kinematics module.
 
-Download the `Eigen` development package and `pybind11`.
+If your system has Python3.10 and Linux, you can pip install via
 ```bash
-sudo apt install libeigen3-dev
-pip install pybind11
+pip install kincpp
 ```
+Otherwise, you may have to install from [source](https://github.com/HorizonRoboticsInternal/kincpp).
 
 ### How to Run
 
-All diagnostic-related code can be found in the `diagnostic_tool` directory. This directory also contains the `kinematics_cpp` pybind module.
-
-#### Kinematics Module
-First, build the kinematics module by carrying out the following:
-```bash
-cd diagnostic_tool
-mkdir build && cd build && cmake ..
-make -j4
-```
-To test if the module has built successfully, you can run some provided unit tests.
-```bash
-cd kinematics_cpp          # from diagnostic_tool
-python test_kinematics.py  # tests FK and IK functions
-```
+All diagnostic-related code can be found in the `diagnostic_tool` directory.
 
 #### Trajectory Generation and Sim / Hardware Recording
 Afterward, you can take a look at how some simple Cartesian trajectories can be created in `generate_joint_trajectories.py`.
 Recording joint angles when carrying out trajectories can be done in both MuJoCo and hardware in `record_sim.py` and `record_hardware.py`, respectively.
-Results can be observed for the hard-coded triangle trajectory in `sim2real_diff_plotter.ipynb`.
+Results can be observed for an example triangle trajectory in `sim2real_diff_plotter.ipynb`.
 
 #### ROS2 Dependency for Hardware Recording
 
@@ -56,13 +42,4 @@ and then `python record_hardware.py`.
 You can also try this code with a simulated version of the arm by instead running
 ```bash
 ros2 launch interbotix_xsarm_control xsarm_control.launch.py robot_model:=wx250s use_sim:=true
-```
-
-### Troubleshooting
-If your system cannot find `Eigen`, you may need to create symlinks if your `Eigen` package is actually named `eigen3/Eigen`.
-Simply locate your `Eigen` installation location, `locate eigen`, and then create the necessary symlinks.
-For example, if `Eigen` is found in `/usr/include`, then you would do the following:
-```bash
-cd /usr/include
-sudo ln -sf eigen3/Eigen Eigen
 ```
